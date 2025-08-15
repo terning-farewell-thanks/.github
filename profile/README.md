@@ -1,7 +1,42 @@
-This project, 'Terning's Final Gift', is a web platform built to host a final farewell event for the users of the 'Terning' service. It features a first-come, first-served giveaway designed to thank the community for their support.
+# 터닝의 마지막 선물 (Terning's Final Gift)
 
-The core technical challenge was to build a system capable of withstanding a massive, instantaneous traffic spike—the 'Thundering Herd' problem—at the moment the event starts. The goal was to prevent server crashes, eliminate race conditions for the limited gifts, and ensure data integrity under extreme load.
+'터닝' 서비스 사용자들의 성원에 보답하기 위해 기획된 마지막 작별 인사, **선착순 선물 증정 이벤트 플랫폼**입니다.
 
-To address these challenges, I implemented an asynchronous, event-driven architecture. Redis is used for real-time inventory management with atomic operations and distributed locking to manage concurrency. Kafka serves as a message queue to decouple the initial user request from the slower database-intensive tasks, ensuring high responsiveness. The entire application is containerized with Docker and monitored using Prometheus and Grafana.
+<br>
 
-The result is a resilient and scalable system that delivers a smooth user experience even under heavy traffic. This project demonstrates a deep understanding of distributed systems, performance optimization, and modern back-end technologies.
+## 핵심 과제: "Thundering Herd" 문제 해결
+
+이벤트가 시작되는 단 한 순간에 발생하는 폭발적인 트래픽 급증, 즉 **"Thundering Herd" 문제**를 해결하는 것이 가장 큰 기술적 과제입니다.
+
+**목표는 명확합니다:**
+* 극한의 부하 상황에서도 **서버 다운을 방지**할 것
+* 한정된 선물을 두고 발생하는 **경쟁 상태(Race Condition)를 제거**할 것
+* 어떤 상황에서도 **데이터 무결성을 완벽하게 보장**할 것
+
+<br>
+
+## 구현 계획 및 아키텍처
+
+이 문제를 해결하기 위해, 다음과 같은 **비동기 이벤트 기반 아키텍처**를 구축하여 대규모 트래픽을 효과적으로 처리하고 분산시킬 **계획입니다.**
+
+* **실시간 재고 관리 및 동시성 제어: `Redis`**
+    * `Atomic` 연산과 `Distributed Lock`을 활용하여 실시간 재고를 관리하고, 동시성 문제를 원천적으로 **차단할 것입니다.**
+
+* **트래픽 완충 및 안정성 확보: `Kafka`**
+    * `Message Queue`를 통해 사용자의 요청과 DB 작업을 분리하여, 시스템 응답성을 극대화하고 부하를 **분산시킬 예정입니다.**
+
+* **효율적인 배포 및 확장: `Docker`**
+    * 애플리케이션 전체를 컨테이너화하여 배포 및 확장성을 **용이하게 만들 것입니다.**
+
+* **시스템 모니터링: `Prometheus` & `Grafana`**
+    * 실시간 모니터링 시스템을 구축하여 시스템 상태를 지속적으로 관찰하고 성능 병목을 신속하게 **파악 및 대응할 수 있도록 구현하겠습니다.**
+
+<br>
+
+## 기대 효과
+
+이 아키텍처를 통해 다음과 같은 결과를 얻을 수 있을 것으로 기대합니다.
+
+* **안정성:** 대규모 트래픽이 예측되는 상황에서도 다운타임 없이 안정적인 시스템을 운영할 수 있습니다.
+* **공정성:** `Race Condition`을 제어하여 모든 사용자에게 공정한 선착순 기회를 제공합니다.
+* **확장성:** 향후 더 큰 규모의 이벤트에도 유연하게 대응할 수 있는 확장 가능한 시스템 구조를 갖추게 됩니다.
