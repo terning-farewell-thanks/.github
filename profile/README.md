@@ -17,6 +17,26 @@
 
 ## 아키텍처
 
+사용자 요청은 빠른 초기 응답을 위한 동기 흐름과, 안정적인 데이터 처리를 위한 비동기 흐름으로 분리됩니다.
+
+```mermaid
+graph TD
+    subgraph "User Interaction"
+        A[User] -->|HTTPS Request| B(Nginx)
+    end
+    subgraph "Synchronous Flow (Fast Response)"
+        B -->|"Proxy Pass"| C{"API Server (Spring Boot)"}
+        C -->|"Check Stock & Lock"| D["Redis (Redisson)"]
+        C -->|"Produce Message"| E[Kafka]
+        C -->|"202- Accepted"| A
+    end
+    subgraph "Asynchronous Flow (Background Processing)"
+        F[Kafka Consumer] -->|"Consume Message"| E
+        F -->|"Save Data"| G[MySQL DB]
+        F -->|"Send Email"| H["Email Service (AWS SES / Gmail)"]
+    end
+```
+
 대규모 트래픽을 효과적으로 분산하고 안정적으로 처리하기 위해 다음과 같이 시스템을 설계했습니다.
 
 * **Redis**: Atomic 연산을 활용해 실시간으로 재고를 관리하고, 분산 락으로 중복 참여를 방지하는 등 동시성 제어의 핵심 역할을 담당합니다.
