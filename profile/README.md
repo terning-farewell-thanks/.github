@@ -24,27 +24,28 @@ graph TD
     subgraph "User Interaction"
         A[User] -->|HTTPS Request| B(Nginx)
     end
+
     subgraph "Synchronous Flow (Fast Response)"
         B -->|"Proxy Pass"| C{"API Server (Spring Boot)"}
-        C -->|"Check Stock & Lock"| D["Redis (Redisson)"]
         C -->|"Produce Message"| E[Kafka]
-        C -->|"202- Accepted"| A
+        C -->|"2022-Accepted"| A
     end
+
     subgraph "Asynchronous Flow (Background Processing)"
-        F[Kafka Consumer] -->|"Consume Message"| E
+        F["Kafka Consumer (in Spring Boot)"] -->|"Consume Message"| E
+        F -->|"Decrement Stock (Atomic Op)"| D[Redis]
         F -->|"Save Data"| G[MySQL DB]
         F -->|"Send Email"| H["Email Service (AWS SES / Gmail)"]
     end
 ```
 
+
 대규모 트래픽을 효과적으로 분산하고 안정적으로 처리하기 위해 다음과 같이 시스템을 설계했습니다.
 
-* **Redis**: Atomic 연산을 활용해 실시간으로 재고를 관리하고, 분산 락으로 중복 참여를 방지하는 등 동시성 제어의 핵심 역할을 담당합니다.
-* **Kafka**: 사용자의 요청을 일단 메시지 큐에 담아두는 '완충' 역할을 합니다. 이를 통해 API 서버는 빠른 응답이 가능해지고, 백엔드 시스템은 DB 과부하 없이 안정적으로 요청을 처리할 수 있습니다.
-* **MySQL (AWS RDS)**: 최종적으로 처리된 신청 내역을 영구적으로 저장합니다.
-* **Docker**: 모든 인프라(Redis, Kafka 등)와 애플리케이션을 컨테이너화하여 일관된 개발 및 배포 환경을 구축했습니다.
-* **Datadog & k6**: `k6`로 부하 테스트를 진행하고, `Datadog` APM으로 시스템 전반을 모니터링하며 병목 지점을 분석했습니다.
-
+* **대규모 동시성 제어**: 비동기 메시지 큐(**Kafka**)를 도입하여 순간적인 트래픽 폭증(Burst Traffic)을 안정적으로 **버퍼링**하고, 단일 파티션을 통해 요청을 **직렬화**하여 순차 처리를 보장합니다.
+* **원자적 연산을 통한 데이터 정합성 보장**: Kafka를 통해 직렬화된 요청을 처리하므로, 무거운 **분산 락(Distributed Lock) 없이** Redis의 Atomic 연산(Lua Script 활용)만으로 Race Condition을 원천적으로 방지하고 재고를 정확하고 효율적으로 관리합니다.
+* **높은 테스트 신뢰도**: `Testcontainers`를 사용하여 실제 운영 환경과 동일한 외부 의존성(MySQL, Kafka, Redis)을 격리된 테스트 환경에서 구동하여 통합 테스트의 신뢰성을 극대화했습니다.
+* **실시간 모니터링**: `Spring Actuator`와 `Datadog` APM을 연동하여 애플리케이션의 상태와 성능을 실시간으로 추적합니다.
 ---
 
 ## 1인 개발 프로세스
